@@ -412,161 +412,8 @@ class Listener extends Eventer {
 
 // End of Eventer implementation
 
-class Watcher {
-  constructor(owner, sources, isMultiSource) {
-    this.owner = owner;
-    this.children = {};
-    this.listeners = [];
-  }
-
-  static makeRoot(owner, sources, isMultiSource) {
-    const root = new Watcher(owner);
-    root._startWatching(sources, isMultiSource);
-    return root;
-  }
-
-  static makeDerivative(parent, fn) {
-    const watcher = new Watcher(parent.owner);
-    watcher.parent = parent;
-    watcher.fn = fn;
-    return watcher;
-  }
-
-  _startWatching(sources, isMultiSource) {
-    this.sources = sources;
-    this.isMultiSource = isMultiSource;
-
-    if (!isMultiSource && (sources[0][0] instanceof List)) {
-      const list = sources[0][0];
-      const addHandler = watchers[0].add || ((item, index, items) => {
-        console.log('item ', item, ' added @ ', index);
-      });
-      const moveHandler = watchers[0].move || ((item, newIndex, oldIndex, items) => {
-        console.log('item ', item, ' moved from @ ', oldIndex, ' to ', newIndex);
-      });
-      const removeHandler = watchers[0].remove || ((item, index, items) => {
-        console.log('item ', item, ' removed @ ', index);
-      });
-      list.on('*', this._listCallback);
-      this.listeners.push({ source: list, listener: this._listCallback });
-      for (let i = 0; i < list.items.length; i++) {
-        addHandler(list.items[i], i, list.items);
-      }
-    } else {
-      for (let source of sources) {
-        const data = source[0];
-        if (data instanceof Model) {
-          const keypath = source.length > 1 ? source[1] : '*';
-          data.on('change:' + (Array.isArray(keypath) ? '(' + keypath.join(',') + ')' : keypath), this._modelCallback);
-          this.listeners.push({ source: data, listener: this._modelCallback });
-        } else
-        if (data instanceof Store) {
-          const ids = source[1];
-          const keypath = source.length > 2 ? source[2] : '*';
-          data.on('change:' + (Array.isArray(ids) ? '(' + ids.join(',') + ')' : ids) + ':' + (Array.isArray(keypath) ? '(' + keypath.join(',') + ')' : keypath), this._modelCallback);
-          this.listeners.push({ source: data, listener: this._modelCallback });
-        } else
-        if (data instanceof List) {
-          throw new Error('A list can only be a single data source.');
-        } else {
-          console.error('Unsupported data source: ', data, '. Expected a Model, Store or List instance.');
-          throw new Error('Unsupported data source');
-        }
-      }
-
-      this._modelCallback();
-    }
-  }
-
-  _stopWatching() {
-    for (let { source, listener } of this.listeners) {
-      source.off(null, listener);
-    }
-    this.listeners = [];
-  }
-
-  _modelCallback() {
-    const values = [];
-    for (let source of sources) {
-      const data = source[0];
-      if (data instanceof Model) {
-        values.push(source.length > 1 && !Array.isArray(source[1]) ? data.get(source[1]) : data.value);
-      } else
-      if (data instanceof Store) {
-        const ids = source[1];
-        if (Array.isArray(ids)) {
-          const value = {};
-          for (let id of ids) {
-            value[id] = data.get(id);
-          }
-          values.push(value);
-        } else {
-          values.push(data.get(ids));
-        }
-      } else
-      if (data instanceof List) {
-
-      }
-    }
-    watchers[0].call(this, values);
-  }
-
-  _listCallback(items, { add, move, remove }) {
-    if (remove) {
-      for (let i in remove) {
-        removeHandler(remove[i], i, items);
-      }
-    }
-    if (move) {
-      for (let i in move) {
-        moveHandler(items[i], i, move[i], items);
-      }
-    }
-    if (add) {
-      for (let i in add) {
-        addHandler(add[i], i, items);
-      }
-    }
-  }
-
-  then(fns) {
-    if (fns instanceof Function) {
-      const child = Watcher.makeDerivative(this, fns);
-      this.children.change = this.children.change || [];
-      this.children.change.push(child);
-      return child;
-    }
-    for (let k in fns) {
-      const child = Watcher.makeDerivative(this, fns[k].shift());
-      if (fns[k].length) {
-        const callbacks = {};
-        callbacks[k] = fns[k];
-        child.then(callbacks);
-      }
-      this.children[k] = this.children[k] || [];
-      this.children[k].push(child);
-    }
-    return this;
-  }
-
-  change(...fns) {
-    return this.then({ change: fns });
-  }
-
-  add(...fns) {
-    return this.then({ add: fns });
-  }
-
-  move(...fns) {
-    return this.then({ move: fns });
-  }
-
-  remove(...fns) {
-    return this.then({ remove: fns });
-  }
-}
-
 class Component extends Eventer {
+
   mount(el) {
     el = el || this._stub;
     el && el.parentNode && el.parentNode.replaceChild(this.el, el);
@@ -634,13 +481,129 @@ class Component extends Eventer {
     while (args[args.length - 1] instanceof Function || (args[args.length - 1] && args[args.length - 1].constructor === Object)) {
       callbacks.unshift(args.pop());
     }
+    const callback = callbacks[0];
     const isMultiSource = Array.isArray(args[0]);
     let sources = isMultiSource ? args[0] : [args];
-    let watcher = new Watcher(this, sources, isMultiSource);
-    for (let callback of callbacks) {
-      watcher = watcher.then(callback);
+    let listener;
+    const watchers = {};
+    const makeWatch = (i) => {
+      return (...args) => {
+        const watcher = this.watch(...args);
+        watchers[i] = watchers[i] || [];
+        watchers[i].push(watcher);
+        return watcher;
+      }
     }
-    return watcher;
+    const stopWatching = (i) => {
+      if (watchers[i]) {
+        for (let watcher of watchers[i]) {
+          watcher.unwatch();
+        }
+        delete watchers[i];
+      }
+    }
+    if (!isMultiSource && (sources[0][0] instanceof List)) {
+      const list = sources[0][0];
+      const addHandler = callback.add || ((item, index, items, watch) => {
+        console.log('item ', item, ' added @ ', index);
+      });
+      const moveHandler = callback.move || ((item, newIndex, oldIndex, items) => {
+        console.log('item ', item, ' moved from @ ', oldIndex, ' to ', newIndex);
+      });
+      const removeHandler = callback.remove || ((item, index, items) => {
+        console.log('item ', item, ' removed @ ', index);
+      });
+      listener = (items, { add, move, remove }) => {
+        if (remove) {
+          for (let i in remove) {
+            stopWatching(i);
+            removeHandler(remove[i], i, items);
+          }
+        }
+        if (move) {
+          const movedWatchers = {}; // Temporary object to prevent overwrites
+          for (let i in move) {
+            movedWatchers[i] = watchers[move[i]];
+            moveHandler(items[i], i, move[i], items);
+          }
+          for (let i in move) {
+            watchers[i] = movedWatchers[i];
+          }
+        }
+        if (add) {
+          for (let i in add) {
+            const watch = makeWatch(i);
+            const result = addHandler(add[i], i, items, watch);
+            if (result && callbacks.length > 1) {
+              watch.apply(this, result.concat(callbacks.slice(1)));
+            }
+          }
+        }
+      }
+      list.on('*', listener);
+      for (let i = 0; i < list.items.length; i++) {
+        addHandler(list.items[i], i, list.items, makeWatch(i));
+      }
+    } else {
+      listener = () => {
+        const values = [];
+        for (let source of sources) {
+          const data = source[0];
+          if (data instanceof Model) {
+            values.push(source.length > 1 && !Array.isArray(source[1]) ? data.get(source[1]) : data.value);
+          } else
+          if (data instanceof Store) {
+            const ids = source[1];
+            if (Array.isArray(ids)) {
+              const value = {};
+              for (let id of ids) {
+                value[id] = data.get(id);
+              }
+              values.push(value);
+            } else {
+              values.push(data.get(ids));
+            }
+          }
+        }
+        stopWatching(0);
+        const watch = makeWatch(0);
+        values.push(watch);
+        const result = callback.apply(this, values);
+        if (result && callbacks.length > 1) {
+          watch.apply(this, result.concat(callbacks.slice(1)));
+        }
+      }
+      for (let source of sources) {
+        const data = source[0];
+        if (data instanceof Model) {
+          const keypath = source.length > 1 ? source[1] : '*';
+          data.on('change:' + (Array.isArray(keypath) ? '(' + keypath.join(',') + ')' : keypath), listener);
+        } else
+        if (data instanceof Store) {
+          const ids = source[1];
+          const keypath = source.length > 2 ? source[2] : '*';
+          data.on('change:' + (Array.isArray(ids) ? '(' + ids.join(',') + ')' : ids) + ':' + (Array.isArray(keypath) ? '(' + keypath.join(',') + ')' : keypath), listener);
+        } else
+        if (data instanceof List) {
+          throw new Error('A list can only be a single data source.');
+        } else {
+          console.error('Unsupported data source: ', data, '. Expected a Model, Store or List instance.');
+          throw new Error('Unsupported data source');
+        }
+      }
+      listener(); // Initial call
+    }
+
+    return { // Provide method to stop watching all dependencies
+      unwatch: () => {
+        for (let i in watchers) {
+          for (let watcher of watchers[i]) {
+            watcher.unwatch();
+          }
+        }
+        this.off(null, listener);
+      }
+    };
   }
 }
 
@@ -877,7 +840,6 @@ class List extends Eventer {
       indexMap[index] = true;
     }
     let j = 0;
-    let moved = false;
     for (let i = 0; i < this.items.length; i++) {
       if (i in indexMap) {
         removed.push(this.items[i]);
