@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="../index.js"></script>
+  <style>
+    #templates { display: none; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- component instance -->
+  <div class="a-button" data-label="Test" data-depth="0"></div>
+  <div class="a-message" data-content="Message!"></div>
+</div>
+<div id="templates">
+  <!-- component definition -->
+  <div class="a-button">
+    <div class="a-button__label"></div>
+    <button class="a-button__mount-btn">Go deeper!</button>
+    <button class="a-button__unmount-btn">Collapse</button>
+    <div class="a-button__inception a-button" data-is-unmounted></div>
+  </div>
+
+  <div class="a-message">
+    <div class="a-message__paragraph"></div>
+    <div class="a-message__actions">
+      <!-- nested component -->
+      <div class="a-message__delete-btn a-button" data-label="Delete"></div>
+    </div>
+  </div>
+</div>
+<script>
+  const todos = new Micro.List(['Item A', 'Item B', 'Item C']);
+
+  Micro.component('a-button', {
+    props: {
+      label: String,
+      depth: Number,
+    },
+    init() {
+      //this.label.textContent = 'This is a button';
+      this.watch(this.data, 'depth', this.childContent.bind(this, 'label'));
+      this.watch(this.data, 'depth', depth => this.childProp('inception', 'depth', (parseInt(depth)||0) + 1));
+      this.mountBtn.addEventListener('click', () => this.inception.mount());
+      this.unmountBtn.addEventListener('click', () => this.inception.unmount());
+
+      this.watch(todos).then({
+        add: () => {},
+        move: () => {},
+        remove: () => {},
+      });
+    }
+  });
+  Micro.component('a-message', {
+    props: {
+      content: String,
+    },
+    init() {
+      this.watch(this.data, 'content', this.childHTML.bind(this, 'paragraph'));
+    }
+  });
+
+
+  Micro.mount();
+</script>
+</body>
+</html>
