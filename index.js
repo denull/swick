@@ -523,11 +523,17 @@ class Component extends Eventer {
         if (move) {
           const movedWatchers = {}; // Temporary object to prevent overwrites
           for (let i in move) {
-            movedWatchers[i] = watchers[move[i]];
+            if (move[i] in watchers) {
+              movedWatchers[i] = watchers[move[i]];
+            }
             moveHandler(items[i], i, move[i], items);
           }
           for (let i in move) {
-            watchers[i] = movedWatchers[i];
+            if (i in movedWatchers) {
+              watchers[i] = movedWatchers[i];
+            } else {
+              delete watchers[i];
+            }
           }
         }
         if (add) {
@@ -975,7 +981,7 @@ const Micro = {
   instances: new WeakMap(),
 };
 
-Micro.component = (className, def) => {
+Micro.component = (className, init, def) => {
   const name = def.name || kebabToCamel(className, true);
   const Comp = function(props, el) {
     this.el = el || (def.el || Micro.templates[className]).cloneNode(true);
@@ -999,7 +1005,7 @@ Micro.component = (className, def) => {
       this[childName] = comp;
     }
     this.data = props;
-    def.init && def.init.call(this, props, el);
+    init && init.call(this, props, el, this.watch.bind(this));
   }
   Object.defineProperty(Comp, 'name', { value: name }); // TODO: make it more usable
   Comp.prototype = new Component;

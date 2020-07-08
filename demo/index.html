@@ -35,33 +35,25 @@
 <script>
   const todos = new Micro.List(['Item A', 'Item B', 'Item C']);
 
-  Micro.component('a-button', {
+  Micro.component('a-button', function(props, el, watch) {
+    //this.label.textContent = 'This is a button';
+    watch(this.data, 'depth', this.childContent.bind(this, 'label'));
+    watch(this.data, 'depth', depth => this.childProp('inception', 'depth', (parseInt(depth)||0) + 1));
+    this.mountBtn.addEventListener('click', () => this.inception.mount());
+    this.unmountBtn.addEventListener('click', () => this.inception.unmount());
+
+    watch(todos, { });
+  }, {
     props: {
       label: String,
       depth: Number,
-    },
-    init() {
-      //this.label.textContent = 'This is a button';
-      this.watch(this.data, 'depth', this.childContent.bind(this, 'label'));
-      this.watch(this.data, 'depth', depth => this.childProp('inception', 'depth', (parseInt(depth)||0) + 1));
-      this.mountBtn.addEventListener('click', () => this.inception.mount());
-      this.unmountBtn.addEventListener('click', () => this.inception.unmount());
-
-      this.watch(todos).then({
-        add: () => {
-          
-        },
-        move: () => {},
-        remove: () => {},
-      });
     }
   });
-  Micro.component('a-message', {
+  Micro.component('a-message', function(props, el, watch) {
+    watch(this.data, 'content', this.childHTML.bind(this, 'paragraph'));
+  }, {
     props: {
       content: String,
-    },
-    init() {
-      this.watch(this.data, 'content', this.childHTML.bind(this, 'paragraph'));
     }
   });
 
