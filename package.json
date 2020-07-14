@@ -1,0 +1,23 @@
+{
+  "name": "swick",
+  "version": "0.1.0",
+  "description": "A micro framework for building reactive DOM components, state management and publishing events.",
+  "main": "swick.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deNULL/swick.git"
+  },
+  "keywords": [
+    "UI",
+    "framework"
+  ],
+  "author": "Denis Olshin (me@denull.ru)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/deNULL/swick/issues"
+  },
+  "homepage": "https://github.com/deNULL/swick#readme"
+}

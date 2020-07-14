@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
-  <script src="../index.js"></script>
+  <script src="../swick.js"></script>
   <style>
     #templates { display: none; }
   </style>
@@ -38,9 +38,9 @@
   </div>
 </div>
 <script>
-  const todos = new Micro.List(['Item A', 'Item B', 'Item C']);
+  const todos = new Swick.List(['Item A', 'Item B', 'Item C']);
 
-  const ATodoItem = Micro.component('a-todo-item', function(props, el, watch) {
+  const ATodoItem = Swick.component('a-todo-item', function(props, el, watch) {
     watch(this.data, 'text', this.childContent.bind(this, 'text'));
   }, {
     props: {
@@ -48,7 +48,7 @@
     }
   });
 
-  Micro.component('a-button', function(props, el, watch) {
+  Swick.component('a-button', function(props, el, watch) {
     //this.label.textContent = 'This is a button';
     watch(this.data, 'depth', this.childContent.bind(this, 'label'));
     watch(this.data, 'depth', depth => this.childProp('inception', 'depth', (parseInt(depth)||0) + 1));
@@ -60,7 +60,7 @@
       depth: Number,
     }
   });
-  Micro.component('a-message', function(props, el, watch) {
+  Swick.component('a-message', function(props, el, watch) {
     watch(this.data, 'content', this.childHTML.bind(this, 'paragraph'));
     watch(todos, {
       container: this.todos,
@@ -84,7 +84,7 @@
   
 
 
-  Micro.mount();
+  Swick.mount();
 </script>
 </body>
 </html>
