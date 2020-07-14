@@ -437,7 +437,7 @@ class Component extends Eventer {
   remove() {
     this.off();
     this.el.remove();
-    Micro.instances.delete(el);
+    Micro.instances.delete(this.el);
   }
 
   // Utils for uniform access to child nodes/components
@@ -477,6 +477,7 @@ class Component extends Eventer {
   }
 
   watch(...args) {
+    const opts = (args[0] && args[0].constructor === Object) ? args.shift() : {};
     let callbacks = [];
     while (args[args.length - 1] instanceof Function || (args[args.length - 1] && args[args.length - 1].constructor === Object)) {
       callbacks.unshift(args.pop());
@@ -485,10 +486,17 @@ class Component extends Eventer {
     const isMultiSource = Array.isArray(args[0]);
     let sources = isMultiSource ? args[0] : [args];
     let listener;
+    const kv = opts.initial ? opts.initial : {};
     const watchers = {};
+    const update = (key, value) => {
+      if (kv[key] !== value) {
+        kv[key] = value;
+        listener();
+      }
+    }
     const makeWatch = (i) => {
       return (...args) => {
-        const watcher = this.watch(...args);
+        const watcher = this.watch({ initial: { index: i } }, ...args);
         watchers[i] = watchers[i] || [];
         watchers[i].push(watcher);
         return watcher;
@@ -504,57 +512,97 @@ class Component extends Eventer {
     }
     if (!isMultiSource && (sources[0][0] instanceof List)) {
       const list = sources[0][0];
-      const addHandler = callback.add || ((item, index, items, watch) => {
-        console.log('item ', item, ' added @ ', index);
-      });
-      const moveHandler = callback.move || ((item, newIndex, oldIndex, items) => {
-        console.log('item ', item, ' moved from @ ', oldIndex, ' to ', newIndex);
-      });
-      const removeHandler = callback.remove || ((item, index, items) => {
-        console.log('item ', item, ' removed @ ', index);
-      });
+      const elements = [];
+      const addItem = (item, i, items) => {
+        const watch = makeWatch(i);
+        const result = callback.add && callback.add.call(this, item, i, items, watch);
+        if (result) {
+          if (callbacks.length > 1) {
+            watch.apply(this, result.concat(callbacks.slice(1)));
+          } else {
+            elements[i] = result;
+            if (callback.container) {
+              // TODO: use Fragments when possible
+              callback.container.insertBefore(result.el || result, (elements[i + 1] && elements[i + 1].el) || elements[i + 1] || null);
+            }
+          }
+        }
+      }
       listener = (items, { add, move, remove }) => {
         if (remove) {
-          for (let i in remove) {
+          for (let k in remove) {
+            const i = parseInt(k);
             stopWatching(i);
-            removeHandler(remove[i], i, items);
+            const result = callback.remove && callback.remove.call(this, remove[i], i, items);
+            if (elements[i] && result !== false) {
+              elements[i].remove && elements[i].remove();
+              delete elements[i];
+            }
           }
         }
         if (move) {
           const movedWatchers = {}; // Temporary object to prevent overwrites
-          for (let i in move) {
+          const movedElements = {};
+          const indices = [];
+          for (let k in move) {
+            const i = parseInt(k);
+            indices.push(i);
             if (move[i] in watchers) {
               movedWatchers[i] = watchers[move[i]];
+              for (let watcher of watchers[move[i]]) {
+                watcher.update('index', i);
+              }
+              delete watchers[move[i]];
             }
-            moveHandler(items[i], i, move[i], items);
+            callback.move && callback.move(items[i], i, move[i], items);
+            if (move[i] in elements) {
+              movedElements[i] = elements[move[i]];
+              delete elements[move[i]];
+            }
           }
-          for (let i in move) {
+          // Using reversed order, so we can rely on elements[i + 1] to be already processed (and do insertBefore call)
+          for (let j = indices.length - 1; j >= 0; j--) {
+            const i = indices[j];
             if (i in movedWatchers) {
               watchers[i] = movedWatchers[i];
             } else {
               delete watchers[i];
             }
-          }
-        }
-        if (add) {
-          for (let i in add) {
-            const watch = makeWatch(i);
-            const result = addHandler(add[i], i, items, watch);
-            if (result && callbacks.length > 1) {
-              watch.apply(this, result.concat(callbacks.slice(1)));
+            if (i in movedElements) {
+              elements[i] = movedElements[i];
+              if (callback.container) {
+                // TODO: probably can be optimized to prevent unneeded calls
+                callback.container.insertBefore(elements[i].el || elements[i], (elements[i + 1] && elements[i + 1].el) || elements[i + 1] || null);
+              }
+            } else {
+              delete elements[i];
             }
           }
         }
+        if (add) {
+          const indices = [];
+          for (let k in add) {
+            indices.push(parseInt(k));
+          }
+          // Using reversed order, so we can rely on elements[i + 1] to be already processed (and do insertBefore call)
+          for (let j = indices.length - 1; j >= 0; j--) {
+            addItem(add[indices[j]], indices[j], items);
+          }
+        }
+        console.log(elements);
       }
       list.on('*', listener);
       for (let i = 0; i < list.items.length; i++) {
-        addHandler(list.items[i], i, list.items, makeWatch(i));
+        addItem(list.items[i], i, list.items);
       }
     } else {
       listener = () => {
         const values = [];
         for (let source of sources) {
           const data = source[0];
+          if (typeof data === 'string') {
+            values.push(kv[data]);
+          } else
           if (data instanceof Model) {
             values.push(source.length > 1 && !Array.isArray(source[1]) ? data.get(source[1]) : data.value);
           } else
@@ -581,6 +629,9 @@ class Component extends Eventer {
       }
       for (let source of sources) {
         const data = source[0];
+        if (typeof data === 'string') {
+          //
+        } else
         if (data instanceof Model) {
           const keypath = source.length > 1 ? source[1] : '*';
           data.on('change:' + (Array.isArray(keypath) ? '(' + keypath.join(',') + ')' : keypath), listener);
@@ -601,6 +652,7 @@ class Component extends Eventer {
     }
 
     return { // Provide method to stop watching all dependencies
+      update,
       unwatch: () => {
         for (let i in watchers) {
           for (let watcher of watchers[i]) {
@@ -637,7 +689,7 @@ class UnmountedComponent extends Component {
 class Model extends Eventer {
   constructor(value) {
     super();
-    if (value !== undefined && typeof value !== 'object') {
+    if (value !== undefined && (!value || value.constructor !== Object)) {
       throw new Error('Unable to create a Model from ' + value + '. Expected an object.');
     }
     this.value = value || {};
@@ -788,6 +840,11 @@ class List extends Eventer {
   }
 
   splice(index, count, values = []) {
+    index = Math.min(index, this.items.length);
+    if (index < 0) {
+      index = Math.max(0, this.items.length + index);
+    }
+    count = Math.min(Math.max(0, count), this.items.length - index);
     values = this.normaliseItems(values);
     const events = {};
     if (count > 0) { // Some elements were removed
@@ -897,6 +954,8 @@ class List extends Eventer {
   }
   
   swap(oldIndex, newIndex) {
+    oldIndex = Math.max(0, Math.min(oldIndex, this.items.length - 1));
+    newIndex = Math.max(0, Math.min(newIndex, this.items.length - 1));
     if (newIndex !== oldIndex) {
       const events = { move: {} };
       events.move[newIndex] = oldIndex;
@@ -909,6 +968,8 @@ class List extends Eventer {
   }
 
   move(oldIndex, newIndex) {
+    oldIndex = Math.max(0, Math.min(oldIndex, this.items.length - 1));
+    newIndex = Math.max(0, Math.min(newIndex, this.items.length - 1));
     if (newIndex !== oldIndex) {
       const events = { move: {} };
       const value = this.items[oldIndex];
@@ -932,7 +993,7 @@ class List extends Eventer {
   reorder(indices) {
     const newItems = [];
     const events = { move: {} };
-    for (let i = 0; i < indices.length; i++) {
+    for (let i = 0; i < Math.min(this.items.length, indices.length); i++) {
       newItems[i] = this.items[indices[i]];
       events.move[i] = indices[i];
     }
@@ -983,7 +1044,10 @@ const Micro = {
 
 Micro.component = (className, init, def) => {
   const name = def.name || kebabToCamel(className, true);
-  const Comp = function(props, el) {
+  const Component = function(props, el) {
+    if (props === null || props.constructor === Object) {
+      props = new Model(props || {});
+    }
     this.el = el || (def.el || Micro.templates[className]).cloneNode(true);
     Micro.instances.set(this.el, this);
     const childs = this.el.querySelectorAll(`[class^="${className}__"]`);
@@ -1007,11 +1071,11 @@ Micro.component = (className, init, def) => {
     this.data = props;
     init && init.call(this, props, el, this.watch.bind(this));
   }
-  Object.defineProperty(Comp, 'name', { value: name }); // TODO: make it more usable
-  Comp.prototype = new Component;
-  Comp.props = def.props || {};
-  Micro.components[name] = Comp;
-  return Comp;
+  Object.defineProperty(Component, 'name', { value: name }); // TODO: make it more usable
+  Component.prototype = new Micro.Component;
+  Component.props = def.props || {};
+  Micro.components[name] = Component;
+  return Component;
 }
 
 Micro.registerTemplates = (templatesEl) => {

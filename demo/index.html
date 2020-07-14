@@ -26,14 +26,27 @@
 
   <div class="a-message">
     <div class="a-message__paragraph"></div>
+    <div class="a-message__todos"></div>
     <div class="a-message__actions">
       <!-- nested component -->
       <div class="a-message__delete-btn a-button" data-label="Delete"></div>
     </div>
   </div>
+
+  <div class="a-todo-item">
+    <div class="a-todo-item__text"></div>
+  </div>
 </div>
 <script>
   const todos = new Micro.List(['Item A', 'Item B', 'Item C']);
+
+  const ATodoItem = Micro.component('a-todo-item', function(props, el, watch) {
+    watch(this.data, 'text', this.childContent.bind(this, 'text'));
+  }, {
+    props: {
+      text: String,
+    }
+  });
 
   Micro.component('a-button', function(props, el, watch) {
     //this.label.textContent = 'This is a button';
@@ -41,8 +54,6 @@
     watch(this.data, 'depth', depth => this.childProp('inception', 'depth', (parseInt(depth)||0) + 1));
     this.mountBtn.addEventListener('click', () => this.inception.mount());
     this.unmountBtn.addEventListener('click', () => this.inception.unmount());
-
-    watch(todos, { });
   }, {
     props: {
       label: String,
@@ -51,11 +62,26 @@
   });
   Micro.component('a-message', function(props, el, watch) {
     watch(this.data, 'content', this.childHTML.bind(this, 'paragraph'));
+    watch(todos, {
+      container: this.todos,
+      add(todo, i, items, watch) {
+        //return new ATodoItem({ text: todo });
+
+        //console.log(this, todo, i, items);
+        const el = document.createElement('div');
+        watch('index', index => {
+          el.innerText = `${index}. ${todo}`;
+        });
+        return el;
+      }
+    });
   }, {
     props: {
       content: String,
     }
   });
+
+  
 
 
   Micro.mount();
