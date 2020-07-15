@@ -1673,7 +1673,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
       }
 
       this.data = props;
-      init && init.call(this, props, el, this.watch.bind(this));
+      init && init.call(this, props, this.watch.bind(this));
     };
 
     Object.defineProperty(Component, 'name', {

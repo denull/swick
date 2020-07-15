@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swick Documentation</title>
+  <script src="swick.js"></script>
+  <style>
+    #templates { display: none; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- component instance -->
+  <div class="a-button" data-label="Test" data-depth="0"></div>
+  <div class="a-message" data-content="Message!"></div>
+</div>
+<div id="templates">
+  <!-- component definition -->
+  <div class="a-button">
+    <div class="a-button__label"></div>
+    <button class="a-button__mount-btn">Go deeper!</button>
+    <button class="a-button__unmount-btn">Collapse</button>
+    <div class="a-button__inception a-button" data-is-unmounted></div>
+  </div>
+
+  <div class="a-message">
+    <div class="a-message__paragraph"></div>
+    <div class="a-message__todos"></div>
+    <div class="a-message__actions">
+      <!-- nested component -->
+      <div class="a-message__delete-btn a-button" data-label="Delete"></div>
+    </div>
+  </div>
+
+  <div class="a-todo-item">
+    <div class="a-todo-item__text"></div>
+  </div>
+</div>
+<script>
+  const todos = new Swick.List(['Item A', 'Item B', 'Item C']);
+
+  const ATodoItem = Swick.component('a-todo-item', function(data, watch) {
+    watch(data, 'text', this.childContent.bind(this, 'text'));
+  }, {
+    props: {
+      text: String,
+    }
+  });
+
+  Swick.component('a-button', function(data, watch) {
+    //this.label.textContent = 'This is a button';
+    watch(data, 'depth', this.childContent.bind(this, 'label'));
+    watch(data, 'depth', depth => this.childProp('inception', 'depth', (parseInt(depth)||0) + 1));
+    this.mountBtn.addEventListener('click', () => this.inception.mount());
+    this.unmountBtn.addEventListener('click', () => this.inception.unmount());
+  }, {
+    props: {
+      label: String,
+      depth: Number,
+    }
+  });
+  Swick.component('a-message', function(data, watch) {
+    watch(data, 'content', this.childHTML.bind(this, 'paragraph'));
+    watch(todos, {
+      container: this.todos,
+      add(todo, i, items, watch) {
+        //return new ATodoItem({ text: todo });
+
+        //console.log(this, todo, i, items);
+        const el = document.createElement('div');
+        watch('index', index => {
+          el.innerText = `${index}. ${todo}`;
+        });
+        return el;
+      }
+    });
+  }, {
+    props: {
+      content: String,
+    }
+  });
+
+  
+
+
+  Swick.mount();
+</script>
+</body>
+</html>

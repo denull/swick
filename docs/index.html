@@ -3,51 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Swick Documentation</title>
   <script src="swick.js"></script>
+  <link rel="stylesheet" type="text/css" href="main.css">
   <style>
     #templates { display: none; }
+    #app {
+      position: absolute;
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+    #left {
+      width: 240px;
+      max-width: 25%;
+      padding: 0 20px;
+    }
+    #left a {
+      display: block;
+    }
+    main {
+      flex: 1;
+    }
+    #content {
+      border: none;
+      width: 100%;
+      height: 100%;
+    }
   </style>
 </head>
 <body>
 <div id="app">
-  <!-- component instance -->
-  <div class="a-button" data-label="Test" data-depth="0"></div>
-  <div class="a-message" data-content="Message!"></div>
+  <aside id="left">
+    <h1>Swick</h1>
+    <a href="intro.html" target="content">Intro</a>
+    <a href="events.html" target="content">Events</a>
+    <a href="models.html" target="content">Models</a>
+    <a href="components.html" target="content">Components</a>
+
+    <h3>Demos</h3>
+    <a href="simple.html" target="content">Basic</a>
+    <a href="todo/index.html" target="content">TodoMVC</a>
+  </aside>
+  <main>
+    <iframe id="content" name="content" src="intro.html"></iframe>
+  </main>
 </div>
 <div id="templates">
-  <!-- component definition -->
-  <div class="a-button">
-    <div class="a-button__label"></div>
-    <button class="a-button__mount-btn">Go deeper!</button>
-    <button class="a-button__unmount-btn">Collapse</button>
-    <div class="a-button__inception a-button" data-is-unmounted></div>
-  </div>
-
-  <div class="a-message">
-    <div class="a-message__paragraph"></div>
-    <div class="a-message__todos"></div>
-    <div class="a-message__actions">
-      <!-- nested component -->
-      <div class="a-message__delete-btn a-button" data-label="Delete"></div>
-    </div>
-  </div>
-
-  <div class="a-todo-item">
-    <div class="a-todo-item__text"></div>
-  </div>
+  
 </div>
 <script>
-  const todos = new Swick.List(['Item A', 'Item B', 'Item C']);
-
-  const ATodoItem = Swick.component('a-todo-item', function(props, el, watch) {
-    watch(this.data, 'text', this.childContent.bind(this, 'text'));
-  }, {
-    props: {
-      text: String,
-    }
-  });
-
   Swick.component('a-button', function(props, el, watch) {
     //this.label.textContent = 'This is a button';
     watch(this.data, 'depth', this.childContent.bind(this, 'label'));
@@ -60,29 +65,6 @@
       depth: Number,
     }
   });
-  Swick.component('a-message', function(props, el, watch) {
-    watch(this.data, 'content', this.childHTML.bind(this, 'paragraph'));
-    watch(todos, {
-      container: this.todos,
-      add(todo, i, items, watch) {
-        //return new ATodoItem({ text: todo });
-
-        //console.log(this, todo, i, items);
-        const el = document.createElement('div');
-        watch('index', index => {
-          el.innerText = `${index}. ${todo}`;
-        });
-        return el;
-      }
-    });
-  }, {
-    props: {
-      content: String,
-    }
-  });
-
-  
-
 
   Swick.mount();
 </script>

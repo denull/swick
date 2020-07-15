@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swick: Intro</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.20.0/themes/prism.min.css" rel="stylesheet" />
+  <link rel="stylesheet" type="text/css" href="main.css">
+  <style>
+    body {
+      padding: 0 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Intro</h1>
+  <p><a href="https://github.com/deNULL/swick" target="_blank">Swick</a> is a very lightweight and efficient alternative to popular UI frameworks, such as Vue, React or Angular. Conceptually it's closest to Svelte (because it operates without Virtual DOM), but it does not require any preprocessing (transpiling) of your code. It's state and event management model is similar to Backbone.JS.</p>
+  <h2>Getting Started</h2>
+  <p>Currently the intended use is either manually import <code>swick.js</code> (or <code>swick.min.js</code>) from Swick repository, or use CDN:</p>
+<pre><code class="language-html">&lt;script src="https://unpkg.com/swick/swick.js"></script></code></pre>
+  <p>Put this <code>script</code> tag in your page's <code>head</code> element.</p>
+  <p><i>Note</i>. By default, <b>Swick does not support Internet Explorer</b> as it uses modern ES6 syntax. If your app still requires IE11 support, add polyfills (from <code>https://polyfill.io/v3/polyfill.min.js</code>, for example), and use compatability version: <code>swick-compat.js</code> or <code>swick-compat.min.js</code> (they are slightly larger than ES6 versions).</p>
+  <p>Now you can declare components and initialise Swick:
+<pre><code class="language-html">&lt;html>
+  &lt;head>
+    &lt;script src="https://unpkg.com/swick/swick.js">&lt;/script>
+  &lt;/head>
+  &lt;body>
+    &lt;div id="app">
+      &lt;!-- Component 'a-button' instance: -->
+      &lt;div class="a-button" data-label="Hello World!">&lt;/div>
+    &lt;/div>
+
+    &lt;div id="templates">
+      &lt;!-- Component 'a-button' template: -->
+      &lt;div class="a-button">
+        &lt;div class="a-button__label">&lt;/div>
+      &lt;/div>
+    &lt;/div>
+
+    &lt;script>
+      // Declare component named 'a-button'
+      const AButton = Swick.component('a-button', function(data, watch) {
+        // Link 'label' property of this component to textContent of the child named 'label'
+        watch(data, 'label', this.childContent.bind(this, 'label'));
+      });
+
+      // Initialise your app
+      Swick.mount();
+    &lt;/script>
+  &lt;/body>
+&lt;/html></code></pre>
+
+  <p>Swick uses some conventions about the way your HTML should be structured and how CSS classes should be named. It's strongly recommended to follow those rules:</p>
+  <ul>
+    <li>Your app should contain an element with id <code>templates</code>, with a child element per each component you will declare. Each such element must have a class with the same name as corresponding component (in kebab-case, like <code>a-button</code> in example above). Those children will be removed at page load and used to instantiate components. You may want to add a CSS rule <code>#templates { display: none; }</code> in the page head to prevent flash of those elements before the page is fully loaded. Do not use <code>script</code> tag for your <code>templates</code> element: it should contain actual DOM nodes, not just text content.</li>
+    <li>It's recommended to have a root element with id <code>app</code>. After <code>Swick.mount()</code> call it will become the root of your application and all components will be initialised within it. Alternatively, you can pass root element to <code>Swick.mount()</code> call.</li>
+    <li>Your components should have kebab-cased CSS classes corresponding to their names (like <code>a-button</code> above). For top-level components, the component name should always be the first class in the <code>class</code> attribute (and the second one if it's a part of another component). By convention, all component names should start with <code>a-</code> prefix (but that convention is not enforced in any way).</li>
+    <li>All parts of your components must have CSS classes in form of <code>component-name__part-name</code>: like <code>a-button__label</code> above. This class should always be the first class in the <code>class</code> attribute (and if it's a component itself, it's name should be the second class). That part will become available on your component instance as <code>label</code> property. </li>
+  </ul>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.20.0/prism.min.js"></script>
+</body>
+</html>

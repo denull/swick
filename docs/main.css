@@ -1,0 +1,27 @@
+body {
+  margin: 0;
+  font-family: Trebuchet MS, Lucida Sans Unicode, Lucida Grande, Tahoma, Geneva, sans-serif;
+  font-size: 16px;
+  color: #111;
+  line-height: 1.5;
+}
+
+code, pre {
+  font-family: Lucida Console, Monaco, monospace;
+  font-size: 14px;
+}
+
+:not(pre) > code {
+  background: #eeeeee;
+  padding: 1px 4px;
+  border-radius: 3px;
+  box-shadow: 0px 1px 1px #00000033;
+}
+
+code[class*=language-], pre[class*=language-] {
+  font-size: 14px;
+}
+
+li {
+  margin-bottom: 1em;
+}
