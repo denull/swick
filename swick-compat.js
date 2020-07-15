@@ -1647,38 +1647,29 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
 
       this.el = el || (def.el || Swick.templates[className]).cloneNode(true);
       Swick.instances.set(this.el, this);
-      var childs = this.el.querySelectorAll("[class^=\"".concat(className, "__\"]"));
+      var childs = Array.from(this.el.querySelectorAll("[class^=\"".concat(className, "__\"]")));
 
-      var _iterator17 = _createForOfIteratorHelper(childs),
-          _step17;
+      for (var _i7 = 0, _childs = childs; _i7 < _childs.length; _i7++) {
+        var child = _childs[_i7];
+        var childName = kebabToCamel(child.classList[0].substr(className.length + 2));
+        var comp = child;
 
-      try {
-        for (_iterator17.s(); !(_step17 = _iterator17.n()).done;) {
-          var child = _step17.value;
-          var childName = kebabToCamel(child.classList[0].substr(className.length + 2));
-          var comp = child;
+        if (child.classList[1]) {
+          var compName = kebabToCamel(child.classList[1], true);
 
-          if (child.classList[1]) {
-            var compName = kebabToCamel(child.classList[1], true);
+          if (compName in Swick.components) {
+            var _props = getDatasetProps(child);
 
-            if (compName in Swick.components) {
-              var _props = getDatasetProps(child);
-
-              if (_props.get('isUnmounted')) {
-                comp = new UnmountedComponent(this, childName, compName, _props, child);
-              } else {
-                comp = new Swick.components[compName](_props);
-                comp.mount(child);
-              }
+            if (_props.get('isUnmounted')) {
+              comp = new UnmountedComponent(this, childName, compName, _props, child);
+            } else {
+              comp = new Swick.components[compName](_props);
+              comp.mount(child);
             }
           }
-
-          this[childName] = comp;
         }
-      } catch (err) {
-        _iterator17.e(err);
-      } finally {
-        _iterator17.f();
+
+        this[childName] = comp;
       }
 
       this.data = props;
@@ -1721,31 +1712,23 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
     }
 
     appEl = appEl || document.getElementById('app');
+    var childs = Array.from(appEl.children);
 
-    var _iterator18 = _createForOfIteratorHelper(appEl.children),
-        _step18;
+    for (var _i8 = 0, _childs2 = childs; _i8 < _childs2.length; _i8++) {
+      var child = _childs2[_i8];
 
-    try {
-      for (_iterator18.s(); !(_step18 = _iterator18.n()).done;) {
-        var child = _step18.value;
+      if (child.classList[0]) {
+        var compName = kebabToCamel(child.classList[0], true);
 
-        if (child.classList[0]) {
-          var compName = kebabToCamel(child.classList[0], true);
-
-          if (compName in Swick.components) {
-            var props = getDatasetProps(child);
-            var comp = new Swick.components[compName](props, props.get('isRendered') ? child : null);
-            !props.get('isRendered') && comp.mount(child);
-            continue;
-          }
+        if (compName in Swick.components) {
+          var props = getDatasetProps(child);
+          var comp = new Swick.components[compName](props, props.get('isRendered') ? child : null);
+          !props.get('isRendered') && comp.mount(child);
+          continue;
         }
-
-        Swick.mount(child); // Scan children recursively
       }
-    } catch (err) {
-      _iterator18.e(err);
-    } finally {
-      _iterator18.f();
+
+      Swick.mount(child); // Scan children recursively
     }
   };
 
@@ -1753,18 +1736,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
     Swick.registerTemplates(document.getElementById('templates'));
     isDOMReady = true;
 
-    var _iterator19 = _createForOfIteratorHelper(waitingForDOM),
-        _step19;
+    var _iterator17 = _createForOfIteratorHelper(waitingForDOM),
+        _step17;
 
     try {
-      for (_iterator19.s(); !(_step19 = _iterator19.n()).done;) {
-        var func = _step19.value;
+      for (_iterator17.s(); !(_step17 = _iterator17.n()).done;) {
+        var func = _step17.value;
         func();
       }
     } catch (err) {
-      _iterator19.e(err);
+      _iterator17.e(err);
     } finally {
-      _iterator19.f();
+      _iterator17.f();
     }
   });
   window.Swick = Swick;

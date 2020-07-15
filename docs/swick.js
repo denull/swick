@@ -1050,7 +1050,7 @@
       }
       this.el = el || (def.el || Swick.templates[className]).cloneNode(true);
       Swick.instances.set(this.el, this);
-      const childs = this.el.querySelectorAll(`[class^="${className}__"]`);
+      const childs = Array.from(this.el.querySelectorAll(`[class^="${className}__"]`));
       for (let child of childs) {
         const childName = kebabToCamel(child.classList[0].substr(className.length + 2));
         let comp = child;
@@ -1101,7 +1101,8 @@
       return;
     }
     appEl = appEl || document.getElementById('app');
-    for (let child of appEl.children) {
+    const childs = Array.from(appEl.children);
+    for (let child of childs) {
       if (child.classList[0]) {
         const compName = kebabToCamel(child.classList[0], true);
         if (compName in Swick.components) {
