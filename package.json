@@ -4,6 +4,7 @@
   "description": "A micro framework for building reactive DOM components, state management and publishing events.",
   "main": "swick.js",
   "scripts": {
+    "build": "node scripts/build.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,5 +20,10 @@
   "bugs": {
     "url": "https://github.com/deNULL/swick/issues"
   },
-  "homepage": "https://github.com/deNULL/swick#readme"
+  "homepage": "https://github.com/deNULL/swick#readme",
+  "devDependencies": {
+    "@babel/core": "^7.10.5",
+    "@babel/preset-env": "^7.10.4",
+    "terser": "^4.8.0"
+  }
 }
