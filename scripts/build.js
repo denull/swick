@@ -25,6 +25,7 @@ const ie11min = Terser.minify(ie11.code, {
 
 // Make a copy for docs
 fs.writeFileSync('docs/swick.js', src);
+fs.writeFileSync('docs/swick-compat.js', src);
 
 // Create minified version
 fs.writeFileSync('swick.min.js', min.code);
@@ -32,5 +33,3 @@ fs.writeFileSync('swick.min.js', min.code);
 // IE11 version
 fs.writeFileSync('swick-compat.js', ie11.code);
 fs.writeFileSync('swick-compat.min.js', ie11min.code);
-
-//console.log(result.code);
