@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swick: Events</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.20.0/themes/prism.min.css" rel="stylesheet" />
+  <link rel="stylesheet" type="text/css" href="main.css">
+  <style>
+    body {
+      padding: 10px 40px 40px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Events</h1>
+  <p>Swick uses its own event system, largely inspired by Backbone.JS. Every class of Swick extends base <code>Swick.Eventer</code> class (and you can extend it too, of course), so all methods below available everywhere.</p>
+
+  <p>The main difference between Backbone and Swick events is that Swick events are <i>hierarchical</i>. For example, an event named <code>'change:user.photo.url'</code> is actually divided into four parts: <code>change</code>, <code>user</code>, <code>photo</code> and <code>url</code>. You can use <code>:</code>, <code>.</code> and <code>/</code> as delimiters: they all are equal.</p>
+
+  <p>What's more important is that you can use wildcards when adding your listeners. For example, <code>'change:user.*'</code> will listen to any change which occurs in <code>user</code> field (or within any of its children). And using <code>'?:user.name'</code> allows capturing all event types which relate only to <code>user.name</code> field. You can use <code>#</code> instead of <code>*</code> and <code>+</code> instead of <code>?</code>, making syntax similar to the one MQTT uses.</p>
+
+  <p>As you might have guessed, Swick uses this system to notify your components about data updates. But how do you trigger those events when the whole object has changed? Do you need to manually call <code>trigger</code> for each of the fields (and for each field of nested objects)?</p>
+
+  <p>For this scenario Swick allows specifying not just a single event to trigger, but a whole <b>tree</b> of them. It looks just like a regular JavaScript object:</p>
+  <pre><code class="language-js">app.trigger({
+  change: {
+    user: {
+      name: true,
+      photo: {
+        url: true,
+      }
+    }
+  },
+  add: {
+    auth: true,
+  },
+  like: true,
+}, payload);</code></pre>
+  <p>This will cause Swick to call all listeners for events like <code>change:*</code>, <code>?:user.name</code>, <code>add/auth</code> and <code>like</code>. The only downside is that you can pass only one payload to all those listeners. For example, when Swick notifies about data updates, it passes the whole object, not just the fields that were changed.</p>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.20.0/prism.min.js"></script>
+</body>
+</html>

@@ -46,14 +46,14 @@
     <a href="todo/index.html" target="content">TodoMVC</a>
   </aside>
   <main>
-    <iframe id="content" name="content" src="intro.html"></iframe>
+    <iframe id="content" name="content" src="intro.html" onload="updateHash(this.contentWindow.location.href)"></iframe>
   </main>
 </div>
 <div id="templates">
   
 </div>
 <script>
-  Swick.component('a-button', function(props, el, watch) {
+  /*Swick.component('a-button', function(props, el, watch) {
     //this.label.textContent = 'This is a button';
     watch(this.data, 'depth', this.childContent.bind(this, 'label'));
     watch(this.data, 'depth', depth => this.childProp('inception', 'depth', (parseInt(depth)||0) + 1));
@@ -66,7 +66,26 @@
     }
   });
 
-  Swick.mount();
+  Swick.mount();*/
+
+  // Simple hash-based routing
+  function hashChanged() {
+    const url = (location.hash.length > 1) ? location.hash.substr(1) : 'intro';
+    document.getElementById('content').src = url.indexOf('#') > -1 ? url.split('#').join('.html#') : (url + '.html');
+  }
+  function updateHash(url) {
+    const match = url.match(/\/([^/.]+)\.html(#.+)?$/);
+    if (match[1] === 'intro' && !match[2]) {
+      history.pushState("", document.title, window.location.pathname + window.location.search);
+    } else {
+      location.hash = '#' + match[1] + (match[2] ? '#' + match[2] : '');
+    }
+  }
+  for (let link of document.querySelectorAll('#left a')) {
+    link.addEventListener('click', updateHash.bind(this, link.href));
+  }
+  window.onhashchange = hashChanged;
+  hashChanged();
 </script>
 </body>
 </html>

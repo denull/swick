@@ -8,14 +8,16 @@
   <link rel="stylesheet" type="text/css" href="main.css">
   <style>
     body {
-      padding: 0 20px;
+      padding: 10px 40px 40px;
     }
   </style>
 </head>
 <body>
   <h1>Intro</h1>
   <p><a href="https://github.com/deNULL/swick" target="_blank">Swick</a> is a very lightweight and efficient alternative to popular UI frameworks, such as Vue, React or Angular. Conceptually it's closest to Svelte (because it operates without Virtual DOM), but it does not require any preprocessing (transpiling) of your code. It's state and event management model is similar to Backbone.JS.</p>
-  <h2>Getting Started</h2>
+  <h2>⚠️ Warning: Early Development</h2>
+  <p>Please note that Swick is still being developed, and version 1.0 has not been released yet. This means that some parts of it are already usable, but others are not, and its API can just at any moment (and possibly many times before 1.0 release). Use at your own risk, and feel free to leave your thoughts and suggestions.</p>
+  <h2 id="getting_started">Getting Started</h2>
   <p>Currently the intended use is either manually import <code>swick.js</code> (or <code>swick.min.js</code>) from Swick repository, or use CDN:</p>
 <pre><code class="language-html">&lt;script src="https://unpkg.com/swick/swick.js"></script></code></pre>
   <p>Put this <code>script</code> tag in your page's <code>head</code> element.</p>
@@ -58,6 +60,8 @@
     <li>Your components should have kebab-cased CSS classes corresponding to their names (like <code>a-button</code> above). For top-level components, the component name should always be the first class in the <code>class</code> attribute (and the second one if it's a part of another component). By convention, all component names should start with <code>a-</code> prefix (but that convention is not enforced in any way).</li>
     <li>All parts of your components must have CSS classes in form of <code>component-name__part-name</code>: like <code>a-button__label</code> above. This class should always be the first class in the <code>class</code> attribute (and if it's a component itself, it's name should be the second class). That part will become available on your component instance as <code>label</code> property. </li>
   </ul>
+
+  <p>This was an example of how a simple component could be defined and used. Before reading about Swick components in more detail it's worth learning about Swick <a href="events.html">event system</a> and <a href="models.html">state management</a>.</p>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.20.0/prism.min.js"></script>
 </body>
 </html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swick: Components</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.20.0/themes/prism.min.css" rel="stylesheet" />
+  <link rel="stylesheet" type="text/css" href="main.css">
+  <style>
+    body {
+      padding: 10px 40px 40px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Components</h1>
+  <p>Many frameworks implement UI components by taking full control of DOM. Swick, on other hand, allows you to work with DOM nodes directly, without intermediate tools like Virtual DOM. Even templates in Swick are just simple and well-known DOM elements, without any magical enhancements (like <code>@click</code> attributes or <code>{#each}</code> instructions).</p>
+  <p>In short, Swick just helps you to update each part of your DOM whenever the related data changes, and cleans up your event listeners whenever a component is discarded.</p>
+  <h2>Component template</h2>
+  <p>Each component consists of two parts: its HTML template and its JS code (also probably some CSS styles, but that's outside of Swick's responsibilities).</p>
+  <p>HTML template should be defined in your app's page body, as a direct descendant of a container with id="<code>templates</code>". The first class of it should be equal to the name of your component in kebab-case:</p>
+  <pre><code class="language-html">&lt;div id="templates">
+  &lt;div class="a-button">
+    &lt;div class="a-button__label">&lt;/div>
+  &lt;/div>
+&lt;/div></code></pre>
+  <p>It can contain some elements called <i>parts</i> of that component. Their first class of a part should be named as <code>component-name__part-name</code> (see part called <code>label</code> above). The part itself can be a component, in this case that component name should be the second class of that part. All <code>data-</code>attributes of that element will be passed to the constructor of child component.</p>
+  <h2>Defining component</h2>
+  <p>The actual code of the component is defined by calling <code>Swick.component</code> method:</p>
+<pre><code class="language-js">// Declare component named 'a-button'
+const AButton = Swick.component('a-button', function(data, watch) {
+  // Component initialisation code
+});</code></pre>
+  <p>After you defined all your components, call <code>Swick.mount();</code> to initialise your app.</p>
+  <p><code>Swick.component</code> accepts three parameters: component name, its initialisation function and an object containing additional options. It returns that component's constructor.</p>
+  <p>An instance of a component is automatically created whenever there's an element with the same class name as that component name: either in the original DOM or within other component. You can also create components programmatically just like any other object, using the constructor returned by <code>Swick.component</code>:</p>
+  <pre><code class="language-js">const btn = new AButton({ label: "I'm a button!" });</code></pre>
+  <p>The first argument of the constructor is an object containing its properties. When Swick creates components automatically, it converts its <code>data-</code>attributes to a similar object. It's then converted to a <code>Model</code> and passed to initialiser function as component's data object (it's also available as <code>this.data</code> on component instance).</p>
+  <p>That means that you can add listeners to it to react to property changes. But Swick provides even better mechanism for that: <code>watch</code> function, which is available both as <code>this.watch</code> on component instance and passed as second argument to the component initialiser.</p>
+  <h2><code>watch</code> method</h2>
+  <p><code>watch</code> function is used to track changes in multiple data sources at the same time. You should use it to access all data that can be changed (instead of querying it directly).</p>
+
+  <p>The first argument of <code>watch</code> can be a <code>Model</code>, a <code>Store</code>, a <code>List</code> or an array containing multiple data sources (but not <code>List</code>'s).</p>
+
+  <p><code>Model</code> can be optionally followed by a string — dot-delimited path to a specific field in a model — or by an array of strings. This allows tracking only in specific parts of your model, ignoring all other changes:</p>
+  <pre><code class="language-js">watch(userModel, (user) => {
+  console.log(user);
+});
+watch(userModel, 'name', ({ name }) => {
+  this.label.textContent = user.name;
+});
+// Be careful: this will throw if `photo` is null/undefined
+watch(userModel, ['name', 'photo.url'], ({ name, photo: { url } }) => {
+  this.label.textContent = user.name;
+  this.photo.src = url;
+});</code></pre>
+  <p>As you can see, the last argument to <code>watch</code> is callback, which is called right after call to <code>watch</code> and then every time the specified <code>Model</code> (or specific fields in it) changes. This is the place where you should update your component's DOM nodes or child components.</p>
+  <p><code>Store</code> can be followed either by a single <code>id</code> or by an array of identifiers — and then by either a single field path or an array of paths (same as <code>Model</code>):</p>
+  <pre><code class="language-js">// Full single model
+watch(usersStore, 1, user => {
+  console.log('User #1 updated: ', user);
+});
+// Single model, multiple fields
+watch(usersStore, 1, ['name', 'photo', 'isDeleted'], ({ name, photo, isDeleted })=> {
+  this.label.textContent = isDeleted ? 'DELETED' : name;
+  this.photo.src = photo.url;
+});
+// Multiple models, multiple fields
+const ids = [1, 2, 3];
+watch(usersStore, ids, ['name', 'photo', 'isDeleted'], users => {
+  this.status.textContent = ids.map(id => users[id].name).join(', ');
+});
+</code></pre>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.20.0/prism.min.js"></script>
+</body>
+</html>

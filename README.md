@@ -2,6 +2,10 @@
 
 **Swick** is a very lightweight and efficient alternative to popular UI frameworks, such as Vue, React or Angular. Conceptually it's closest to Svelte (because it operates without Virtual DOM), but it does not require any preprocessing (transpiling) of your code. It's state and event management model is similar to (and inspired by) Backbone.JS.
 
+## ⚠️ Warning: Early Development
+
+Please note that Swick is still being developed, and version 1.0 has not been released yet. This means that some parts of it are already usable, but others are not, and its API can just at any moment (and possibly many times before 1.0 release). Use at your own risk, and feel free to leave your thoughts and suggestions.
+
 ## Getting started
 
 Currently the intended use is either manually import `swick.js` (or `swick.min.js`) from Swick repository, or use CDN:
@@ -53,3 +57,5 @@ Swick uses some conventions about the way your HTML should be structured and how
 * It's recommended to have a root element with id `app`. After `Swick.mount()` call it will become the root of your application and all components will be initialised within it. Alternatively, you can pass root element to `Swick.mount()` call.
 * Your components should have kebab-cased CSS classes corresponding to their names (like `a-button` above). For top-level components, the component name should always be the first class in the `class` attribute (and the second one if it's a part of another component). By convention, all component names should start with `a-` prefix (but that convention is not enforced in any way).
 * All parts of your components must have CSS classes in form of `component-name__part-name`: like `a-button__label` above. This class should always be the first class in the `class` attribute (and if it's a component itself, it's name should be the second class). That part will become available on your component instance as `label` property.
+
+This was an example of how a simple component could be defined and used. Before reading about Swick components in more detail it's worth learning about Swick [event system](https://denull.github.io/swick#events.html) and [state management](https://denull.github.io/swick#models.html).

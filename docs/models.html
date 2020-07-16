@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swick: Models</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.20.0/themes/prism.min.css" rel="stylesheet" />
+  <link rel="stylesheet" type="text/css" href="main.css">
+  <style>
+    body {
+      padding: 10px 40px 40px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Models, Stores and Lists</h1>
+  <p>Another feature that was inspired by Backbone is state management. <code>Model</code> in Swick is very similar to <code>Model</code> in Backbone. However, instead of <code>Collection</code> there're two separate entities: <code>Store</code> and <code>List</code>.</p>
+
+  <h2>Swick.Model</h2>
+  <p><code>Model</code> is basically just a wrapped JavaScript object, which triggers <code>change</code> events whenever any field in it changes. For performance reasons, to perform such update, you need to call <code>set</code> method on it: you must not change values directly (which are available under <code>value</code> field).</p>
+
+  <h2>Swick.Store</h2>
+  <p><code>Store</code> is an unordered collection of <code>Model</code>s, it's a key-value storage (a map). Internally it's similar to a <code>Model</code> where each field contains another <code>Model</code>. By default, it uses <code>id</code> field as keys (but you can override <code>idAt</code> method to change this behavior). When creating a <code>Store</code> you can specify the subclass of <code>Model</code> which will be used to wrap each value in this store.</p>
+
+  <h2>Swick.List</h2>
+  <p><code>List</code> is also a collection of <code>Model</code>s, but it's ordered (like an array). Instead of actually storing Models, it can be linked to a <code>Store</code> and contain only identifiers of its items.</p>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.20.0/prism.min.js"></script>
+</body>
+</html>
