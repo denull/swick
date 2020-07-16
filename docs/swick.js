@@ -413,10 +413,14 @@
   // End of Eventer implementation
 
   class Component extends Eventer {
+    mount(stub) {
+      if (this._finishInit) {
+        this._finishInit();
+        delete this._finishInit;
+      }
 
-    mount(el) {
-      el = el || this._stub;
-      el && el.parentNode && el.parentNode.replaceChild(this.el, el);
+      stub = stub || this._stub;
+      stub && stub.parentNode && stub.parentNode.replaceChild(this.el, stub);
       return this;
     }
 
@@ -426,10 +430,11 @@
     }
 
     // Temporarily remove from parent without fully destroying (for conditional rendering)
-    unmount() {
-      if (!this.el.parentNode) return this; // Not mounted
+    unmount(el) {
+      el = el || this.el;
+      if (!el.parentNode) return this; // Not mounted
       this._stub = this._stub || document.createComment(''); // Replace with a comment, so we can easily put it back
-      this.el.parentNode.replaceChild(this._stub, this.el);
+      el.parentNode.replaceChild(this._stub, el);
       return this;
     }
 
@@ -462,7 +467,7 @@
       if (el instanceof Component) {
         el.data.set(prop, value);
       } else {
-        el.classList.toggle('is-' + camelToKebab(prop), !!value);
+        el.classList.toggle(camelToKebab(prop), !!value);
       }
     }
     childProp(childName, prop, value) {
@@ -663,27 +668,6 @@
         }
       };
     }
-  }
-
-  // Special un-initialized version of a component (initializes on the first mount - replaced with actual component after that)
-  class UnmountedComponent extends Component {
-    constructor(parent, childName, compName, props, el) {
-      super();
-      this.parent = parent;
-      this.childName = childName;
-      this.compName = compName;
-      this.data = props;
-      this.el = document.createComment('');
-      el.parentNode.replaceChild(this.el, el); // Replace original (not yet alive) element with a stub
-    }
-
-    mount() {
-      const comp = this.parent[this.childName] = new Swick.components[this.compName](this.data);
-      comp.mount(this.el);
-      return comp;
-    }
-
-    unmount() {} // Noop
   }
 
   class Model extends Eventer {
@@ -1048,28 +1032,38 @@
       if (props === null || props.constructor === Object) {
         props = new Model(props || {});
       }
+
       this.el = el || (def.el || Swick.templates[className]).cloneNode(true);
+      this.data = props;
       Swick.instances.set(this.el, this);
-      const childs = Array.from(this.el.querySelectorAll(`[class^="${className}__"]`));
-      for (let child of childs) {
-        const childName = kebabToCamel(child.classList[0].substr(className.length + 2));
-        let comp = child;
-        if (child.classList[1]) {
-          const compName = kebabToCamel(child.classList[1], true);
-          if (compName in Swick.components) {
-            const props = getDatasetProps(child);
-            if (props.get('isUnmounted')) {
-              comp = new UnmountedComponent(this, childName, compName, props, child);
-            } else {
+
+      const finishInit = () => {
+        const childs = Array.from(this.el.querySelectorAll(`[class^="${className}__"]`));
+        for (let child of childs) {
+          const childName = kebabToCamel(child.classList[0].substr(className.length + 2));
+          let comp = child;
+          if (child.classList[1]) {
+            const compName = kebabToCamel(child.classList[1], true);
+            if (compName in Swick.components) {
+              const props = getDatasetProps(child);
               comp = new Swick.components[compName](props);
-              comp.mount(child);
+              if (props.get('isUnmounted')) {
+                comp.unmount(child);
+              } else {
+                comp.mount(child);
+              }
             }
           }
+          this[childName] = comp;
         }
-        this[childName] = comp;
+        init && init.call(this, props, this.watch.bind(this));
       }
-      this.data = props;
-      init && init.call(this, props, this.watch.bind(this));
+
+      if (props.get('isUnmounted')) {
+        this._finishInit = finishInit;
+      } else {
+        finishInit();
+      }
     }
     Object.defineProperty(Component, 'name', { value: name }); // TODO: make it more usable
     Component.prototype = new Swick.Component;

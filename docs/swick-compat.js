@@ -660,9 +660,15 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
 
     _createClass(Component, [{
       key: "mount",
-      value: function mount(el) {
-        el = el || this._stub;
-        el && el.parentNode && el.parentNode.replaceChild(this.el, el);
+      value: function mount(stub) {
+        if (this._finishInit) {
+          this._finishInit();
+
+          delete this._finishInit;
+        }
+
+        stub = stub || this._stub;
+        stub && stub.parentNode && stub.parentNode.replaceChild(this.el, stub);
         return this;
       }
     }, {
@@ -674,12 +680,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
 
     }, {
       key: "unmount",
-      value: function unmount() {
-        if (!this.el.parentNode) return this; // Not mounted
+      value: function unmount(el) {
+        el = el || this.el;
+        if (!el.parentNode) return this; // Not mounted
 
         this._stub = this._stub || document.createComment(''); // Replace with a comment, so we can easily put it back
 
-        this.el.parentNode.replaceChild(this._stub, this.el);
+        el.parentNode.replaceChild(this._stub, el);
         return this;
       } // Unbinds all listeners and destroys component
 
@@ -721,7 +728,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
         if (el instanceof Component) {
           el.data.set(prop, value);
         } else {
-          el.classList.toggle('is-' + camelToKebab(prop), !!value);
+          el.classList.toggle(camelToKebab(prop), !!value);
         }
       }
     }, {
@@ -1047,64 +1054,26 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
     }]);
 
     return Component;
-  }(Eventer); // Special un-initialized version of a component (initializes on the first mount - replaced with actual component after that)
-
-
-  var UnmountedComponent = /*#__PURE__*/function (_Component) {
-    _inherits(UnmountedComponent, _Component);
-
-    var _super3 = _createSuper(UnmountedComponent);
-
-    function UnmountedComponent(parent, childName, compName, props, el) {
-      var _this3;
-
-      _classCallCheck(this, UnmountedComponent);
-
-      _this3 = _super3.call(this);
-      _this3.parent = parent;
-      _this3.childName = childName;
-      _this3.compName = compName;
-      _this3.data = props;
-      _this3.el = document.createComment('');
-      el.parentNode.replaceChild(_this3.el, el); // Replace original (not yet alive) element with a stub
-
-      return _this3;
-    }
-
-    _createClass(UnmountedComponent, [{
-      key: "mount",
-      value: function mount() {
-        var comp = this.parent[this.childName] = new Swick.components[this.compName](this.data);
-        comp.mount(this.el);
-        return comp;
-      }
-    }, {
-      key: "unmount",
-      value: function unmount() {} // Noop
-
-    }]);
-
-    return UnmountedComponent;
-  }(Component);
+  }(Eventer);
 
   var Model = /*#__PURE__*/function (_Eventer3) {
     _inherits(Model, _Eventer3);
 
-    var _super4 = _createSuper(Model);
+    var _super3 = _createSuper(Model);
 
     function Model(value) {
-      var _this4;
+      var _this3;
 
       _classCallCheck(this, Model);
 
-      _this4 = _super4.call(this);
+      _this3 = _super3.call(this);
 
       if (value !== undefined && (!value || value.constructor !== Object)) {
         throw new Error('Unable to create a Model from ' + value + '. Expected an object.');
       }
 
-      _this4.value = value || {};
-      return _this4;
+      _this3.value = value || {};
+      return _this3;
     }
 
     _createClass(Model, [{
@@ -1147,18 +1116,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
   var Store = /*#__PURE__*/function (_Eventer4) {
     _inherits(Store, _Eventer4);
 
-    var _super5 = _createSuper(Store);
+    var _super4 = _createSuper(Store);
 
     function Store(items) {
-      var _this5;
+      var _this4;
 
       var model = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : Model;
 
       _classCallCheck(this, Store);
 
-      _this5 = _super5.call(this);
-      _this5.items = {};
-      _this5.model = model;
+      _this4 = _super4.call(this);
+      _this4.items = {};
+      _this4.model = model;
 
       if (Array.isArray(items)) {
         var _iterator13 = _createForOfIteratorHelper(items),
@@ -1167,7 +1136,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
         try {
           for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
             var item = _step13.value;
-            _this5.items[_this5.modelId(item)] = item instanceof Model ? item : new model(item);
+            _this4.items[_this4.modelId(item)] = item instanceof Model ? item : new model(item);
           }
         } catch (err) {
           _iterator13.e(err);
@@ -1177,11 +1146,11 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
       } else if (items instanceof Object) {
         for (var id in items) {
           var _item = items[id];
-          _this5.items[id] = _item instanceof Model ? _item : new model(_item);
+          _this4.items[id] = _item instanceof Model ? _item : new model(_item);
         }
       }
 
-      return _this5;
+      return _this4;
     }
 
     _createClass(Store, [{
@@ -1255,42 +1224,42 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
   var List = /*#__PURE__*/function (_Eventer5) {
     _inherits(List, _Eventer5);
 
-    var _super6 = _createSuper(List);
+    var _super5 = _createSuper(List);
 
     function List() {
-      var _this6;
+      var _this5;
 
       var items = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
       var store = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
       _classCallCheck(this, List);
 
-      _this6 = _super6.call(this);
-      _this6.filtered = {}; // id => true
+      _this5 = _super5.call(this);
+      _this5.filtered = {}; // id => true
 
-      _this6.items = items;
+      _this5.items = items;
 
       if (store instanceof Model) {
-        _this6.model = store;
-        _this6.items = items.map(function (item) {
+        _this5.model = store;
+        _this5.items = items.map(function (item) {
           return item instanceof store ? item : new store(item);
         }); // Wrap values
       } else if (store instanceof Store || store instanceof Function) {
-        _this6.store = store;
+        _this5.store = store;
       } else if (store !== null) {
         throw new Error('Unable to use ' + store + ' as a backing store for List. Expected Model, Store or a function (id => model).');
       }
 
-      return _this6;
+      return _this5;
     }
 
     _createClass(List, [{
       key: "normaliseItems",
       value: function normaliseItems(items) {
-        var _this7 = this;
+        var _this6 = this;
 
         return this.model ? items.map(function (item) {
-          return item instanceof _this7.model ? item : new _this7.model(item);
+          return item instanceof _this6.model ? item : new _this6.model(item);
         }) : items;
       }
     }, {
@@ -1641,39 +1610,51 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
     var name = def.name || kebabToCamel(className, true);
 
     var Component = function Component(props, el) {
+      var _this7 = this;
+
       if (props === null || props.constructor === Object) {
         props = new Model(props || {});
       }
 
       this.el = el || (def.el || Swick.templates[className]).cloneNode(true);
+      this.data = props;
       Swick.instances.set(this.el, this);
-      var childs = Array.from(this.el.querySelectorAll("[class^=\"".concat(className, "__\"]")));
 
-      for (var _i7 = 0, _childs = childs; _i7 < _childs.length; _i7++) {
-        var child = _childs[_i7];
-        var childName = kebabToCamel(child.classList[0].substr(className.length + 2));
-        var comp = child;
+      var finishInit = function finishInit() {
+        var childs = Array.from(_this7.el.querySelectorAll("[class^=\"".concat(className, "__\"]")));
 
-        if (child.classList[1]) {
-          var compName = kebabToCamel(child.classList[1], true);
+        for (var _i7 = 0, _childs = childs; _i7 < _childs.length; _i7++) {
+          var child = _childs[_i7];
+          var childName = kebabToCamel(child.classList[0].substr(className.length + 2));
+          var comp = child;
 
-          if (compName in Swick.components) {
-            var _props = getDatasetProps(child);
+          if (child.classList[1]) {
+            var compName = kebabToCamel(child.classList[1], true);
 
-            if (_props.get('isUnmounted')) {
-              comp = new UnmountedComponent(this, childName, compName, _props, child);
-            } else {
+            if (compName in Swick.components) {
+              var _props = getDatasetProps(child);
+
               comp = new Swick.components[compName](_props);
-              comp.mount(child);
+
+              if (_props.get('isUnmounted')) {
+                comp.unmount(child);
+              } else {
+                comp.mount(child);
+              }
             }
           }
+
+          _this7[childName] = comp;
         }
 
-        this[childName] = comp;
-      }
+        init && init.call(_this7, props, _this7.watch.bind(_this7));
+      };
 
-      this.data = props;
-      init && init.call(this, props, this.watch.bind(this));
+      if (props.get('isUnmounted')) {
+        this._finishInit = finishInit;
+      } else {
+        finishInit();
+      }
     };
 
     Object.defineProperty(Component, 'name', {
