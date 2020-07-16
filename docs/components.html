@@ -46,11 +46,11 @@ const AButton = Swick.component('a-button', function(data, watch) {
   <pre><code class="language-js">watch(userModel, (user) => {
   console.log(user);
 });
-watch(userModel, 'name', ({ name }) => {
+watch(userModel, 'name', name => {
   this.label.textContent = user.name;
 });
-// Be careful: this will throw if `photo` is null/undefined
-watch(userModel, ['name', 'photo.url'], ({ name, photo: { url } }) => {
+// If photo is null/undefined, url will also be null
+watch(userModel, ['name', 'photo.url'], (name, url) => {
   this.label.textContent = user.name;
   this.photo.src = url;
 });</code></pre>
@@ -61,14 +61,13 @@ watch(usersStore, 1, user => {
   console.log('User #1 updated: ', user);
 });
 // Single model, multiple fields
-watch(usersStore, 1, ['name', 'photo', 'isDeleted'], ({ name, photo, isDeleted })=> {
+watch(usersStore, 1, ['name', 'photo', 'isDeleted'], (name, photo, isDeleted) => {
   this.label.textContent = isDeleted ? 'DELETED' : name;
   this.photo.src = photo.url;
 });
 // Multiple models, multiple fields
-const ids = [1, 2, 3];
-watch(usersStore, ids, ['name', 'photo', 'isDeleted'], users => {
-  this.status.textContent = ids.map(id => users[id].name).join(', ');
+watch(usersStore, [1, 2, 3], ['name', 'photo', 'isDeleted'], users => {
+  this.status.textContent = users.map(([ name, photo, isDeleted ]) => name).join(', ');
 });
 </code></pre>
 
